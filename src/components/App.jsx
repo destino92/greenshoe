@@ -19,20 +19,70 @@ class App extends Component {
 
     this.state = {
       loans: loanData,
+      searchedUser: undefined,
+      searchTerm: ''
     }
+
+    this.onSearchChange = this.onSearchChange.bind(this);
+    this.onSearchSubmit = this.onSearchSubmit.bind(this);
   };
 
+  onSearchChange(event) {
+    this.setState({ searchTerm: event.target.value });
+  }
+
+  onSearchSubmit(event) {
+    event.preventDefault();
+    const { searchTerm, loans } = this.state;
+    let { searchedUser } = this.state;
+
+    if(searchTerm === '') {
+      this.setState({searchedUser: undefined});
+      return true;
+    };
+
+    searchedUser = loans.filter( user => user.national_id === searchTerm || user.mobile_number === searchTerm);
+
+    this.setState({searchedUser});
+  }
+
   render() {
-    const {loans} = this.state;
+    const { loans, searchTerm, searchedUser } = this.state;
+
+    console.log(searchTerm, searchedUser);
+
     return(
       <div className="page">
+        <div className="interactions">
+          <Search
+            value={searchTerm}
+            onChange={this.onSearchChange}
+            onSubmit={this.onSearchSubmit}
+          >
+            Search By ID or Phone Number
+          </Search>
+        </div>
         <Table
           list={loans}
+          searchedUser={searchedUser}
         />
       </div>
     );
   }
 }
+
+const Search = ({ value, onChange, onSubmit, children}) =>
+  <form onSubmit={onSubmit}>
+    <input
+      type="text"
+      value={value}
+      onChange={onChange}
+      placeholder="Filter list"
+    />
+    <button type="submit">
+      {children}
+    </button>
+  </form>
 
 class Table extends Component {
   constructor(props) {
@@ -53,7 +103,7 @@ class Table extends Component {
   }
 
   render() {
-    const {list} = this.props;
+    const {list, searchedUser} = this.props;
 
     const { sortKey, isSortReverse } = this.state;
 
@@ -102,24 +152,49 @@ class Table extends Component {
             </Sort>
           </span>
         </div>
-        { reverseSortedList.map(item =>
-          <div
-            key={item.object_id}
-            className="table-row"
-          >
-            <span style={{ width: '40%' }}>
-              <a href="#">{item.full_name}</a>
-            </span>
-            <span style={{ width: '30%' }}>
-              {item.national_id}
-            </span>
-            <span style={{ width: '15%' }}>
-              {item.mobile_number}
-            </span>
-            <span style={{ width: '15%' }}>
-              {item.loan_balance}
-            </span>
-          </div>
+        { searchedUser
+          ? (searchedUser.length === 0
+              ? <h1 style={{textAlign: 'center'}}>
+                  Sorry, The person that you are  looking for isn't listed.
+                </h1>
+              : searchedUser.map(item =>
+                  <div
+                    key={item.object_id}
+                    className="table-row"
+                  >
+                    <span style={{ width: '40%' }}>
+                      <a href="#">{item.full_name}</a>
+                    </span>
+                    <span style={{ width: '30%' }}>
+                      {item.national_id}
+                    </span>
+                    <span style={{ width: '15%' }}>
+                      {item.mobile_number}
+                    </span>
+                    <span style={{ width: '15%' }}>
+                      {item.loan_balance}
+                    </span>
+                  </div>
+                )
+              )
+          : reverseSortedList.map(item =>
+              <div
+                key={item.object_id}
+                className="table-row"
+              >
+                <span style={{ width: '40%' }}>
+                  <a href="#">{item.full_name}</a>
+                </span>
+                <span style={{ width: '30%' }}>
+                  {item.national_id}
+                </span>
+                <span style={{ width: '15%' }}>
+                  {item.mobile_number}
+                </span>
+                <span style={{ width: '15%' }}>
+                  {item.loan_balance}
+                </span>
+              </div>
         )}
       </div>
     )
